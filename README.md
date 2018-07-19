@@ -1,21 +1,33 @@
-Improved Quizlet to Anki Importer
-=================================
+# Anki-Quizlet
 
-I love Anki, but many of my classmates use Quizlet. So, here we go...
+_**NOTE** fork of [Improved Quizlet to Anki Importer](https://ankiweb.net/shared/info/590899480)_
 
-**Why It's Better Than The Other Quizlet Add Ons**
+This is a simple _Quizlet_ to _Anki_ importer. It has the following advantages over the alternatives:
 
-* All you've gotta do is enter the URL to a **Quizlet** deck
+* You only have to enter the URL to a _Quizlet_ deck
 * Imports public decks and any associated pictures
-* Has decent error handling, like letting you know if a deck is private
-* Doesn't make a bunch of new note types every time you **import a deck**
-* **Well documented code in case you want to modify or fork it yourself**
+* Has decent error handling (e.g. private deck)
+* Doesn't make a bunch of new note types every time you import a deck
+* Well documented code in case you want to modify or fork it yourself
 
-**How To Use**
+# Installation
 
-**After installing (see bottom of page), restart Anki and navigate to Tools→Import from Quizlet**
+1. Navigate to _Tools_ → _Add-ons_
+2. Click on _Get Add-ons_
+3. Enter [590899480](https://ankiweb.net/shared/info/590899480)
+4. Click on _OK_
+5. Restart _Anki_
 
-**Tip**
+# Usage
 
-**Here's a good [two-minute YouTube video](https://www.youtube.com/watch?v=F7sUUGakIhs) (not mine) for changing note types on Quizlet cards you may have imported. Sometimes people switch the terms and definitions, and you can flip them back in Anki if you need to.**
+1. Navigate to _Tools_ → _Import from Quizlet_
+2. Enter _Quizlet_ deck URL _(**NOTE** folders not supported yet)_
+
+# Development
+
+1. Clone code from [Github](https://github.com/darkdragon-001/Anki-Quizlet)
+2. Open plugin directory
+   1. Navigate to _Tools_ → _Add-ons_
+   2. Click on _View files_
+3. Move `AnkiQuizlet` folder to plugin directory
 

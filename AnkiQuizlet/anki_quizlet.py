@@ -1,44 +1,30 @@
 #-------------------------------------------------------------------------------
 #
-# Name:        Quizlet plugin for Anki 2.0
-# Purpose:     Import decks from Quizlet into Anki 2.0
+# Name:        Quizlet plugin for Anki 2.1
+# Purpose:     Import decks from Quizlet into Anki 2.1
 # Author:
-#  - Original: (c) Rolph Recto 2012, last updated 12/06/2012
-#              https://github.com/rolph-recto/Anki-Quizlet
-#  - Also:     Contributions from https://ankiweb.net/shared/info/1236400902
-#  - Current:  JDMaybeMD
-# Created:     04/07/2017
+#  1. (c) Rolph Recto 2012, last updated 12/06/2012
+#     https://github.com/rolph-recto/Anki-Quizlet
+#  2. Contributions from https://ankiweb.net/shared/info/1236400902
+#  3. JDMaybeMD
+#  4. darkdragon-001
+# Created:     07/19/2018
 #
-# Changlog:    Inital release
-#               - Rolph's plugin functionality was broken, so...
-#               - removed search tables and associated functions to KISS
-#               - reused the original API key, dunno if that's OK
-#               - replaced with just one box, for a quizlet URL
-#               - added basic error handling for dummies
-#
-#               Update 04/09/2017
-#               - modified to now take a full Quizlet url for ease of use
-#               - provide feedback if trying to download a private deck
-#               - return RFC 2616 response codes when error handling
-#               - don't make a new card type every time a new deck imported
-#               - better code documentation so people can modify it
-#   
-#               Update 01/31/2018
-#               - get original quality images instead of mobile version
 #-------------------------------------------------------------------------------
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 __window = None
 
-import sys, math, time, urllib, urlparse, json, re
-from urllib2 import Request, urlopen, URLError
+import sys, math, time, urllib.request, urllib.parse, urllib.error, urllib.parse, json, re
+from urllib.request import Request, urlopen
+from urllib.error import URLError
 
 # Anki
 from aqt import mw
 from aqt.qt import *
 
-# PyQt4.Qt import Qt
-from PyQt4.QtGui import *
+# PyQt5.Qt import Qt
+from PyQt5.QtGui import *
 
 # add custom model if needed
 def addCustomModel(name, col):
@@ -150,12 +136,12 @@ class QuizletWindow(QWidget):
         url = self.text_url.text()
         
         # voodoo needed for some error handling
-        if urlparse.urlparse(url).scheme:
-            urlDomain = urlparse.urlparse(url).netloc
-            urlPath = urlparse.urlparse(url).path
+        if urllib.parse.urlparse(url).scheme:
+            urlDomain = urllib.parse.urlparse(url).netloc
+            urlPath = urllib.parse.urlparse(url).path
         else:
-            urlDomain = urlparse.urlparse("https://"+url).netloc
-            urlPath = urlparse.urlparse("https://"+url).path
+            urlDomain = urllib.parse.urlparse("https://"+url).netloc
+            urlPath = urllib.parse.urlparse("https://"+url).path
 
         # validate quizlet URL
         if url == "":
@@ -171,7 +157,7 @@ class QuizletWindow(QWidget):
             self.label_results.setText("Oops! Please use the full deck URL :(")
             return
         elif not bool(re.search(r'\d', quizletDeckID)):
-            self.label_results.setText(u"Oops! No deck ID found in path <i>{0}</i> :(".format(quizletDeckID))
+            self.label_results.setText("Oops! No deck ID found in path <i>{0}</i> :(".format(quizletDeckID))
             return
         else: # get first set of digits from url path
             quizletDeckID = re.search(r"\d+", quizletDeckID).group(0)
@@ -180,8 +166,8 @@ class QuizletWindow(QWidget):
         self.label_results.setText("Connecting to Quizlet...")
 
         # build URL
-        deck_url = (u"https://api.quizlet.com/2.0/sets/{0}".format(quizletDeckID))
-        deck_url += (u"?client_id={0}".format(QuizletWindow.__APIKEY))
+        deck_url = ("https://api.quizlet.com/2.0/sets/{0}".format(quizletDeckID))
+        deck_url += ("?client_id={0}".format(QuizletWindow.__APIKEY))
 
         # stop previous thread first
         if not self.thread == None:
@@ -200,14 +186,14 @@ class QuizletWindow(QWidget):
             if self.thread.errorCode == 403:
                 self.label_results.setText("Sorry, this is a private deck :(")
             elif self.thread.errorCode == 404:
-                self.label_results.setText(u"Can't find a deck with the ID <i>{0}</i>".format(quizletDeckID))
+                self.label_results.setText("Can't find a deck with the ID <i>{0}</i>".format(quizletDeckID))
             else:
                 self.label_results.setText(self.thread.errorMessage)
         else: # everything went through, let's roll!
             deck = self.thread.results
-            self.label_results.setText((u"Importing deck {0} by {1}...".format(deck["title"], deck["created_by"])))
+            self.label_results.setText(("Importing deck {0} by {1}...".format(deck["title"], deck["created_by"])))
             self.createDeck(deck)
-            self.label_results.setText((u"Success! Imported <b>{0}</b> ({1} cards by <i>{2}</i>)".format(deck["title"], deck["term_count"], deck["created_by"])))
+            self.label_results.setText(("Success! Imported <b>{0}</b> ({1} cards by <i>{2}</i>)".format(deck["title"], deck["term_count"], deck["created_by"])))
 
         self.thread.terminate()
         self.thread = None
@@ -229,7 +215,7 @@ class QuizletWindow(QWidget):
         mw.col.models.setCurrent(model)
         mw.col.models.current()["did"] = deck["id"]
         mw.col.models.save(model)
-        txt=u"""
+        txt="""
         <div><img src="{0}" /></div>
         """
         for term in terms:
@@ -250,7 +236,7 @@ class QuizletWindow(QWidget):
         file_name = "quizlet-" + url.split('/')[-1]
 		# get original, non-mobile version of images
         url = url.replace('_m', '')
-        urllib.urlretrieve(url, file_name)
+        urllib.request.urlretrieve(url, file_name)
         return file_name
 
 class QuizletDownloader(QThread):
@@ -275,13 +261,13 @@ class QuizletDownloader(QThread):
             self.error = True
             if hasattr(e, 'code'):
                 self.errorCode = e.code
-                self.errorMessage = (u"Error {0}".format(self.errorCode))
+                self.errorMessage = ("Error {0}".format(self.errorCode))
                 if hasattr(e, 'reason'):
                     self.errorReason = e.reason
-                    self.errorMessage += (u": {0}".format(self.errorReason))
+                    self.errorMessage += (": {0}".format(self.errorReason))
         except ValueError as e:
                 self.error = True
-                self.errorReason = (u"Invalid json: {0}".format(e))
+                self.errorReason = ("Invalid json: {0}".format(e))
         # yep, we got it
 
 # plugin was called from Anki
@@ -291,5 +277,5 @@ def runQuizletPlugin():
 
 # create menu item in Anki
 action = QAction("Import from Quizlet", mw)
-mw.connect(action, SIGNAL("triggered()"), runQuizletPlugin)
+action.triggered.connect(runQuizletPlugin)
 mw.form.menuTools.addAction(action)

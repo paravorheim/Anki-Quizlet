@@ -16,7 +16,7 @@ import sys
 import math
 import time
 import datetime as dt
-import urllib as url
+import urllib as url1
 import urllib2 as url2
 import json
 
@@ -26,7 +26,7 @@ from aqt.qt import *
 
 #PyQT
 from PyQt4.QtGui import *
-from PyQt4.Qt import Qt
+# from PyQt4.Qt import Qt
 
 #copied straight from anki.stdmodels
 #it is necessary to create a custom model
@@ -34,14 +34,14 @@ from PyQt4.Qt import Qt
 def addCustomModel(name, col):
     """create a new custom model for the imported deck"""
     mm = col.models
-    m = mm.new(_("Basic")+" ({0})".format(name))
-    fm = mm.newField(_("Front"))
+    m = mm.new(u"Basic"+u" ({0})".format(name))
+    fm = mm.newField("Front")
     mm.addField(m, fm)
-    fm = mm.newField(_("Back"))
+    fm = mm.newField("Back")
     mm.addField(m, fm)
-    t = mm.newTemplate(_("Card 1"))
-    t['qfmt'] = _("{{Front}}")
-    t['afmt'] = "{{FrontSide}}\n\n<hr id=answer>\n\n"+_("{{Back}}")
+    t = mm.newTemplate("Card 1")
+    t['qfmt'] = "{{Front}}"
+    t['afmt'] = "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"
     mm.addTemplate(m, t)
     mm.add(m)
     return m
@@ -120,17 +120,23 @@ class QuizletWindow(QWidget):
         self.box_sort.addStretch(1)
 
         #search button
+        self.box_code = QHBoxLayout()
+        self.button_code = QPushButton("Import Set", self)
         self.box_search = QHBoxLayout()
         self.button_search = QPushButton("Search", self)
 
+        self.box_code.addStretch(1)
+        self.box_code.addWidget(self.button_code)
         self.box_search.addStretch(1)
         self.box_search.addWidget(self.button_search)
 
         self.button_search.clicked.connect(self.onSearch)
+        self.button_code.clicked.connect(self.onCode)
 
         #add layouts to right
         self.box_right.addLayout(self.box_sort)
         self.box_right.addLayout(self.box_search)
+        self.box_right.addLayout(self.box_code)
 
         #add left and right layouts to upper
         self.box_upper.addLayout(self.box_left)
@@ -218,6 +224,34 @@ class QuizletWindow(QWidget):
         self.setWindowTitle("Import from Quizlet")
         self.show()
 
+    def onCode(self):
+        #build URL
+        deck_url = (u"https://api.quizlet.com/2.0/sets/{0}/terms".format(self.text_name.text()))
+        deck_url += u"?client_id={0}".format(QuizletWindow.__APIKEY)
+
+        #stop the previous thread first
+        if not self.thread == None:
+            self.thread.terminate()
+
+        #download the data!
+        self.thread = QuizletDownloader(self, deck_url)
+        self.thread.start()
+
+        while not self.thread.isFinished():
+            mw.app.processEvents()
+            self.thread.wait(50)
+
+        #error with fetching data
+        if self.thread.error:
+            self.label_results.setText( (u"Failed to load deck <b>{0}</b>!"
+                .format(self.results["sets"][index]["title"])) )
+        #everything went through!
+        else:
+            terms = self.thread.results
+            self.createDeck(self.text_name.text(), terms)
+        self.thread.terminate()
+        self.thread = None
+
     def onSearch(self):
         """user clicked search button; load first page of results"""
         self.name = self.text_name.text()
@@ -242,14 +276,14 @@ class QuizletWindow(QWidget):
         #set the GUI
         self.hideTable()
         self.button_search.setEnabled(False)
-        self.label_results.setText( ("Importing deck <b>{0}</b> ..."
+        self.label_results.setText( (u"Importing deck <b>{0}</b> ..."
             .format(self.results["sets"][index]["title"])) )
 
         #build URL
-        deck_url = ("https://api.quizlet.com/2.0/sets/{0}/terms".
+        deck_url = (u"https://api.quizlet.com/2.0/sets/{0}/terms".
             format(self.results["sets"][index]["id"]))
 
-        deck_url += "?client_id={0}".format(QuizletWindow.__APIKEY)
+        deck_url += u"?client_id={0}".format(QuizletWindow.__APIKEY)
 
         #stop the previous thread first
         if not self.thread == None:
@@ -265,7 +299,7 @@ class QuizletWindow(QWidget):
 
         #error with fetching data
         if self.thread.error:
-            self.label_results.setText( ("Failed to load deck <b>{0}</b>!"
+            self.label_results.setText( (u"Failed to load deck <b>{0}</b>!"
                 .format(self.results["sets"][index]["title"])) )
         #everything went through!
         else:
@@ -274,7 +308,7 @@ class QuizletWindow(QWidget):
 
             self.showTable()
             self.button_search.setEnabled(True)
-            self.label_results.setText( ("Successfully imported deck <b>{0}</b>."
+            self.label_results.setText( (u"Successfully imported deck <b>{0}</b>."
                 .format(self.results["sets"][index]["title"])) )
 
         self.thread.terminate()
@@ -295,13 +329,21 @@ class QuizletWindow(QWidget):
         mw.col.models.setCurrent(model)
         mw.col.models.current()["did"] = deck["id"]
         mw.col.models.save(model)
-
-        for term in terms:
+#         f=open('terms.txt','wb')
+        txt=u"""
+        <div><img src="{0}" /></div>
+        """
+        for term in terms:            
             note = mw.col.newNote()
             note["Front"] = term["term"]
             note["Back"] = term["definition"]
+            if not term["image"] is None:
+                #stop the previous thread first
+                self.fileDownloader(term["image"]["url"])
+                note["Back"]+=txt.format(term["image"]["url"].split('/')[-1]) 
+                mw.app.processEvents()
             mw.col.addNote(note)
-
+#         f.close()
         mw.col.reset()
         mw.reset()
 
@@ -397,14 +439,14 @@ class QuizletWindow(QWidget):
             return "Error: Must have input to search!"
         #search for deck name only
         elif not self.name == "" and self.user == "":
-            return "Searching for \"{0}\" ...".format(self.name)
+            return u"Searching for \"{0}\" ...".format(self.name)
         #search for deck name and user
         elif not self.name == "" and not self.user == "":
-            return ("Searching for \"{0}\" by user <u>{1}</u> ..."
+            return (u"Searching for \"{0}\" by user <u>{1}</u> ..."
                 .format(self.name, self.user))
         #search for user only
         elif self.name == "" and not self.user == "":
-            return "Searching for decks by user <u>{0}</u> ...".format(self.user)
+            return u"Searching for decks by user <u>{0}</u> ...".format(self.user)
 
     def fetchResults(self, page=1):
         """load results"""
@@ -424,14 +466,14 @@ class QuizletWindow(QWidget):
             return
 
         #build search URL
-        search_url = "https://api.quizlet.com/2.0/search/sets"
-        search_url += "?q={0}".format(self.name)
+        search_url = u"https://api.quizlet.com/2.0/search/sets"
+        search_url += u"?q={0}".format(self.name)
         if not self.user == "":
-            search_url += "&creator={0}".format(self.user)
-        search_url += "&page={0}".format(page)
-        search_url += "&per_page={0}".format(QuizletWindow.RESULTS_PER_PAGE)
-        search_url += "&sort={0}".format(self.sort)
-        search_url += "&client_id={0}".format(QuizletWindow.__APIKEY)
+            search_url += u"&creator={0}".format(self.user)
+        search_url += u"&page={0}".format(page)
+        search_url += u"&per_page={0}".format(QuizletWindow.RESULTS_PER_PAGE)
+        search_url += u"&sort={0}".format(self.sort)
+        search_url += u"&client_id={0}".format(QuizletWindow.__APIKEY)
 
         #stop the previous thread first
         if not self.thread == None:
@@ -476,6 +518,24 @@ class QuizletWindow(QWidget):
             self.label_results.setText( ("Displaying results {0} - {1} of {2}."
                 .format(first, last, num_results)) )
             self.table_results.verticalHeader().setOffset(first)
+            
+    def fileDownloader(self, url):
+        file_name = url.split('/')[-1]
+        url1.urlretrieve(url,file_name)
+#         u = url2.urlopen(url)
+#         f = open(file_name, 'wb')
+#         meta = u.info()
+#         file_size = int(meta.getheaders("Content-Length")[0])
+#         
+#         file_size_dl = 0
+#         block_sz = 8192
+#         while True:
+#             buffer = u.read(block_sz)
+#             if not buffer:
+#                 break       
+#             file_size_dl += len(buffer)
+#             f.write(buffer)
+#             f.close()               
 
 
 class QuizletDownloader(QThread):

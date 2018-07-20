@@ -14,7 +14,7 @@ This is a simple _Quizlet_ to _Anki_ importer. It has the following advantages o
 
 1. Navigate to _Tools_ → _Add-ons_
 2. Click on _Get Add-ons_
-3. Enter [590899480](https://ankiweb.net/shared/info/590899480)
+3. Enter [1710898344](https://ankiweb.net/shared/info/1710898344)
 4. Click on _OK_
 5. Restart _Anki_
 

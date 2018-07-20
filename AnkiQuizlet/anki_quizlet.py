@@ -11,20 +11,22 @@
 # Created:     07/19/2018
 #
 #-------------------------------------------------------------------------------
-#!/usr/bin/env python3
 
 __window = None
 
-import sys, math, time, urllib.request, urllib.parse, urllib.error, urllib.parse, json, re
-from urllib.request import Request, urlopen
-from urllib.error import URLError
+import sys, math, time, json, re
+if sys.version_info < (3, 0):
+    from urllib import urlretrieve
+    from urlparse import urlparse
+    from urllib2 import urlopen, URLError
+else:
+    from urllib.request import urlopen, urlretrieve
+    from urllib.parse import urlparse
+    from urllib.error import URLError
 
 # Anki
 from aqt import mw
 from aqt.qt import *
-
-# PyQt5.Qt import Qt
-from PyQt5.QtGui import *
 
 # add custom model if needed
 def addCustomModel(name, col):
@@ -136,12 +138,12 @@ class QuizletWindow(QWidget):
         url = self.text_url.text()
         
         # voodoo needed for some error handling
-        if urllib.parse.urlparse(url).scheme:
-            urlDomain = urllib.parse.urlparse(url).netloc
-            urlPath = urllib.parse.urlparse(url).path
+        if urlparse(url).scheme:
+            urlDomain = urlparse(url).netloc
+            urlPath = urlparse(url).path
         else:
-            urlDomain = urllib.parse.urlparse("https://"+url).netloc
-            urlPath = urllib.parse.urlparse("https://"+url).path
+            urlDomain = urlparse("https://"+url).netloc
+            urlPath = urlparse("https://"+url).path
 
         # validate quizlet URL
         if url == "":
@@ -236,7 +238,7 @@ class QuizletWindow(QWidget):
         file_name = "quizlet-" + url.split('/')[-1]
 		# get original, non-mobile version of images
         url = url.replace('_m', '')
-        urllib.request.urlretrieve(url, file_name)
+        urlretrieve(url, file_name)
         return file_name
 
 class QuizletDownloader(QThread):

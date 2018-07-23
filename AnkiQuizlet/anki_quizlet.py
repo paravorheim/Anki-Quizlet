@@ -12,6 +12,8 @@
 #
 #-------------------------------------------------------------------------------
 
+from __future__ import unicode_literals
+
 __window = None
 
 import sys, math, time, json, re

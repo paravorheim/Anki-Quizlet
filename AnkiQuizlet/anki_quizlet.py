@@ -263,12 +263,13 @@ class QuizletDownloader(QThread):
             self.results = json.load(urlopen(self.url))
         except URLError as e:
             self.error = True
+            self.errorMessage = "Error"
             if hasattr(e, 'code'):
                 self.errorCode = e.code
-                self.errorMessage = ("Error {0}".format(self.errorCode))
-                if hasattr(e, 'reason'):
-                    self.errorReason = e.reason
-                    self.errorMessage += (": {0}".format(self.errorReason))
+                self.errorMessage += (" {0}".format(self.errorCode))
+            if hasattr(e, 'reason'):
+                self.errorReason = e.reason
+                self.errorMessage += (": {0}".format(self.errorReason))
         except ValueError as e:
                 self.error = True
                 self.errorReason = ("Invalid json: {0}".format(e))

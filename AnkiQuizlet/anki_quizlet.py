@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 
 __window = None
 
+# Requests to Quizlet
 import sys, math, time, json, re
 if sys.version_info < (3, 0):
     from urllib import urlretrieve
@@ -62,7 +63,7 @@ def addCustomModel(name, col):
     mm.add(m)
     return m
 
-# throw up a window with some info (used for testing)
+# open a window with some info (used for testing)
 def debug(message):
     QMessageBox.information(QWidget(), "Message", message)
 
@@ -131,7 +132,7 @@ class QuizletWindow(QWidget):
         # go, baby go!
         self.setMinimumWidth(500)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        self.setWindowTitle("Improved Quizlet to Anki Importer")
+        self.setWindowTitle("Quizlet to Anki Importer")
         self.show()
 
     def onCode(self):
@@ -166,7 +167,7 @@ class QuizletWindow(QWidget):
         else: # get first set of digits from url path
             quizletDeckID = re.search(r"\d+", quizletDeckID).group(0)
 
-        # and aaawaaaay we go...
+        # start connecting...
         self.label_results.setText("Connecting to Quizlet...")
 
         # build URL
@@ -193,7 +194,7 @@ class QuizletWindow(QWidget):
                 self.label_results.setText("Can't find a deck with the ID <i>{0}</i>".format(quizletDeckID))
             else:
                 self.label_results.setText(self.thread.errorMessage)
-        else: # everything went through, let's roll!
+        else: # success fetching data
             deck = self.thread.results
             self.label_results.setText(("Importing deck {0} by {1}...".format(deck["title"], deck["created_by"])))
             self.createDeck(deck)
@@ -238,7 +239,7 @@ class QuizletWindow(QWidget):
     # download the images
     def fileDownloader(self, url):
         file_name = "quizlet-" + url.split('/')[-1]
-		# get original, non-mobile version of images
+        # get original, non-mobile version of images
         url = url.replace('_m', '')
         urlretrieve(url, file_name)
         return file_name
@@ -259,7 +260,7 @@ class QuizletDownloader(QThread):
         self.errorMessage = None
 
     def run(self):
-        try: # can we parse this url and get valid json?
+        try: # try to parse this url and get valid json
             self.results = json.load(urlopen(self.url))
         except URLError as e:
             self.error = True
@@ -273,7 +274,6 @@ class QuizletDownloader(QThread):
         except ValueError as e:
                 self.error = True
                 self.errorReason = ("Invalid json: {0}".format(e))
-        # yep, we got it
 
 # plugin was called from Anki
 def runQuizletPlugin():

@@ -23,7 +23,8 @@ if sys.version_info < (3, 0):
     from urlparse import urlparse
     from urllib2 import urlopen, URLError
 else:
-    from urllib.request import urlopen, urlretrieve
+    import certifi
+    from urllib.request import urlopen
     from urllib.parse import urlparse
     from urllib.error import URLError
 
@@ -241,7 +242,9 @@ class QuizletWindow(QWidget):
         file_name = "quizlet-" + url.split('/')[-1]
         # get original, non-mobile version of images
         url = url.replace('_m', '')
-        urlretrieve(url, file_name)
+        with urlopen(url, cafile=certifi.where()) as u, \
+                open(file_name, 'wb') as f:
+            f.write(u.read())
         return file_name
 
 class QuizletDownloader(QThread):
@@ -261,7 +264,7 @@ class QuizletDownloader(QThread):
 
     def run(self):
         try: # try to parse this url and get valid json
-            self.results = json.load(urlopen(self.url))
+            self.results = json.load(urlopen(self.url, cafile=certifi.where()))
         except URLError as e:
             self.error = True
             self.errorMessage = "Error"
